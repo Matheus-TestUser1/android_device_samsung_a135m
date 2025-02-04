@@ -1,81 +1,86 @@
 
-# TWRP device tree for Samsung Galaxy A13 (SM-A135M)
 
-## Disclaimer
-**Warning: Flashing custom recoveries can potentially brick your device. Proceed at your own risk. I am not responsible for any damage or data loss caused to your device.**
+# TWRP Device Tree para Samsung Galaxy A13 (SM-A135M)
 
-**compiled for android 13 and 14.**
 
-## How To Build
-1. Create a working directory at `~`:
+## Aviso Legal
+**⚠️ Atenção: Instalar recoveries personalizadas pode potencialmente inutilizar seu dispositivo. Prossiga por sua própria conta e risco. Não me responsabilizo por qualquer dano ou perda de dados.**
+
+**Compilado para Android 13 e 14.**
+
+## Requisitos
+- Computador Linux (Recomendado Ubuntu 20.04 ou superior)
+- Mínimo 250GB de espaço em disco
+- 16GB de RAM (recomendado)
+- Ferramentas: `repo`, `git`, `build-essential`
+
+## Preparação do Ambiente
+
+### 1. Configurar Ambiente de Compilação
 ```bash
-mkdir ~/TWRP && cd ~/TWRP
+# Atualizar pacotes
+sudo apt update && sudo apt upgrade -y
+
+# Instalar dependências
+sudo apt install -y repo git build-essential wget python3 bc bison build-essential ccache curl flex g++-multilib gcc-multilib git git-lfs gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev libelf-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev
 ```
-2. Initialize your local repository using AOSP tree to build TWRP:
+
+### 2. Configurar Repositório TWRP
 ```bash
-repo init -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git -b twrp-12.1
-```
-Or a more space-saving solution:
-```bash
+# Criar diretório de trabalho
+mkdir -p ~/TWRP && cd ~/TWRP
+
+# Inicializar repositório TWRP
 repo init --depth=1 -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git -b twrp-12.1
+
+# Sincronizar repositórios
+repo sync -j$(nproc)
 ```
-3. Sync up:
+
+### 3. Clonar Árvore do Dispositivo
 ```bash
-repo sync
-```
-4. Clone the device tree:
-```bash
+# Clonar árvore do dispositivo
 git clone -b twrp-12.1 https://github.com/Matheus-TestUser1/android_device_samsung_a13.git device/samsung/a13
 ```
-5. Build it:
+
+### 4. Compilar TWRP
 ```bash
-cd ~/TWRP && export ALLOW_MISSING_DEPENDENCIES=true && . build/envsetup.sh && lunch twrp_a13-eng && mka recoveryimage
+# Preparar ambiente de compilação
+cd ~/TWRP
+export ALLOW_MISSING_DEPENDENCIES=true
+. build/envsetup.sh
+lunch twrp_a13-eng
+mka recoveryimage
 ```
 
-## What is active in this TWRP device tree?
-- `[A]` Active
-- `[P]` Partially Active
-- `[ ]` Not tested / Not working
-```bash
-Blocking checks
-- [A] Correct screen/recovery size
-- [P] Working Touch, screen
-- [P] Backup to internal/microSD
-- [P] Restore from internal/microSD
-- [A] Reboot to system
+## Status de Funcionalidades
+
+### Funcionalidades Principais
+- [A] Tamanho correto de tela/recovery
+- [P] Touch e tela funcionando
+- [A] Reboot para sistema
 - [P] ADB
+- [P] Backup/restauração para cartão interno/SD
 
-Medium checks
-- [ ] update.zip sideload
-- [ ] UI colors (red/blue inversions)
-- [P] Screen goes off and on
-- [P] F2FS/EXT4 Support, exFAT/NTFS where supported
-- [A] All important partitions listed in mount/backup lists
-- [P] Backup/restore to/from external (USB-OTG) storage (not supported by the device)
-- [ ] Backup/restore to/from adb (https://gerrit.omnirom.org/#/c/15943/)
-- [ ] Decrypt /data
-- [P] Correct date
+### Funcionalidades Secundárias
+- [ ] Sideload de update.zip
+- [P] Suporte F2FS/EXT4
+- [ ] Descriptografia de dados
+- [P] Exportação MTP
 
-Minor checks
-- [A] MTP export
-- [A] Reboot to bootloader
-- [A] Reboot to recovery
-- [A] Poweroff
-- [P] Battery level
-- [A] Temperature
-- [A] Encrypted backups
-- [A] Input devices via USB (USB-OTG)
-- [A] Keyboard, mouse and disks (not supported by the device)
-- [P] USB mass storage export
-- [A] Set brightness
-- [A] Vibrate
-- [A] Screenshot
-- [ ] Partition SD card
-```
-## Credits 
-[device tree a137f](https://github.com/badra639/twrp_samsung_a13ve) 
-[device tree a01 core](https://github.com/almondnguyen/twrp_device_samsung_a01core/blob/twrp-11/BoardConfig.mk)
-[device tree a146b a14x](https://github.com/physwizz/a146b-a14x-TWRP-11-dt)
-[device tree a01q](https://github.com/ravindu644/twrp_galaxy_a01)
-## Additional Resources
-For a detailed guide on building TWRP, please refer to [this guide](https://xdaforums.com/t/guide-to-twrp-building.4515895/).
+### Legenda
+- `[A]` Totalmente Funcional
+- `[P]` Parcialmente Funcional
+- `[ ]` Não Testado/Não Funcional
+
+## Créditos
+- [Device Tree a137f](https://github.com/badra639/twrp_samsung_a13ve)
+- [Device Tree A01 Core](https://github.com/almondnguyen/twrp_device_samsung_a01core)
+- [Device Tree A146B](https://github.com/physwizz/a146b-a14x-TWRP-11-dt)
+
+## Recursos Adicionais
+- [Guia Completo de Compilação TWRP](https://xdaforums.com/t/guide-to-twrp-building.4515895/)
+
+## Suporte
+Em caso de problemas, abra uma issue no repositório ou busque ajuda nos fóruns de desenvolvimento Android.
+
