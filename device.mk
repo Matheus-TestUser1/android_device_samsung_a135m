@@ -23,3 +23,20 @@ PRODUCT_USE_DYNAMIC_PARTITIONS := true
 PRODUCT_PACKAGES += \
     android.hardware.fastboot@1.0-impl-mock \
     fastbootd
+
+# Bibliotecas Exynos recuperadas do vendor
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/recovery/root/vendor/lib/libexynosdisplay.so:$(TARGET_COPY_OUT_RECOVERY)/root/vendor/lib/libexynosdisplay.so \
+    $(LOCAL_PATH)/recovery/root/vendor/lib/libexynosutils.so:$(TARGET_COPY_OUT_RECOVERY)/root/vendor/lib/libexynosutils.so \
+    $(LOCAL_PATH)/recovery/root/vendor/lib/libhwbinder.so:$(TARGET_COPY_OUT_RECOVERY)/root/vendor/lib/libhwbinder.so \
+    $(LOCAL_PATH)/recovery/root/vendor/lib/libhwc2on1adapter.so:$(TARGET_COPY_OUT_RECOVERY)/root/vendor/lib/libhwc2on1adapter.so \
+    $(LOCAL_PATH)/recovery/root/vendor/lib/libion_exynos.so:$(TARGET_COPY_OUT_RECOVERY)/root/vendor/lib/libion_exynos.so \
+    $(LOCAL_PATH)/recovery/root/vendor/lib/libsecnativefeature.so:$(TARGET_COPY_OUT_RECOVERY)/root/vendor/lib/libsecnativefeature.so \
+    $(LOCAL_PATH)/recovery/root/vendor/lib/libsensorlistener.so:$(TARGET_COPY_OUT_RECOVERY)/root/vendor/lib/libsensorlistener.so \
+    $(LOCAL_PATH)/recovery/root/vendor/lib/libshmemcompat.so:$(TARGET_COPY_OUT_RECOVERY)/root/vendor/lib/libshmemcompat.so \
+    $(LOCAL_PATH)/recovery/root/vendor/lib/sensors.inputvirtual.so:$(TARGET_COPY_OUT_RECOVERY)/root/vendor/lib/sensors.inputvirtual.so \
+    $(LOCAL_PATH)/recovery/root/vendor/lib/vendor.samsung.hardware.sysinput-V2-ndk.so:$(TARGET_COPY_OUT_RECOVERY)/root/vendor/lib/vendor.samsung.hardware.sysinput-V2-ndk.so
+
+# Bibliotecas HW
+PRODUCT_COPY_FILES += \
+    $(wildcard $(LOCAL_PATH)/recovery/root/vendor/lib/hw/*.so):$(TARGET_COPY_OUT_RECOVERY)/root/vendor/lib/hw/
