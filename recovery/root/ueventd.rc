@@ -1,3 +1,7 @@
+# TWRP ueventd.rc for Samsung Galaxy A13
+# Updated: 2025-02-27 15:27:58
+# Author: Matheus-TestUser1
+
 import /vendor/etc/ueventd.rc
 import /odm/etc/ueventd.rc
 
@@ -20,13 +24,7 @@ subsystem sound
     devname uevent_devpath
     dirname /dev/snd
 
-# ueventd can only set permissions on device nodes and their associated
-# sysfs attributes, not on arbitrary paths.
-#
-# format for /dev rules: devname mode uid gid
-# format for /sys rules: nodename attr mode uid gid
-# shortcut: "mtd@NN" expands to "/dev/mtd/mtdNN"
-
+# Basic device nodes
 /dev/null                 0666   root       root
 /dev/zero                 0666   root       root
 /dev/full                 0666   root       root
@@ -39,37 +37,49 @@ subsystem sound
 /dev/hwbinder             0666   root       root
 /dev/vndbinder            0666   root       root
 
-# kms driver for drm based gpu
+# Graphics & Display
+/dev/mali0                0666   system     system
+/dev/ion                  0666   system     system
+/dev/ump                  0666   system     graphics
+/dev/exynos-mem           0660   system     graphics
+/dev/g2d                  0660   system     graphics
+/dev/fimg2d               0666   system     graphics
+/dev/graphics/*           0660   root       graphics
 /dev/dri/*                0666   root       graphics
 
-# these should not be world writable
-/dev/graphics/*           0660   root       graphics
+# Input devices
 /dev/input/*              0660   root       input
 /dev/v4l-touch*           0660   root       input
-/dev/snd/*                0660   system     audio
+/dev/input/event*         0660   system     input
+
+# USB
 /dev/bus/usb/*            0660   root       usb
 /dev/mtp_usb              0660   root       mtp
 /dev/usb_accessory        0660   root       usb
-/dev/tun                  0660   system     vpn
 
-# sysfs properties
-/dev/input/event* 0660 system input
-/sys/devices/virtual/input/input*   enable      0660  root   input
-/sys/devices/virtual/input/input*   enable2      0660  root   input
-/sys/devices/virtual/input/input*   poll_delay  0660  root   input
-/sys/class/sec/tsp/cmd 0660 system radio
-/sys/class/sec/tsp1/cmd 0660 system radio
-/sys/class/sec/tsp2/cmd 0660 system radio
-/sys/class/sec/tsp/input/enabled 0660 system system
-/sys/class/sec/sec_epen/input/enabled 0660 system system
-/sys/class/sec/tsp/enabled 0660 system system
-/sys/class/sec/sec_epen/enabled 0660 system system
+# Samsung Touch
+/sys/class/sec/tsp/cmd                  0660   system     radio
+/sys/class/sec/tsp1/cmd                 0660   system     radio
+/sys/class/sec/tsp2/cmd                 0660   system     radio
+/sys/class/sec/tsp/input/enabled        0660   system     system
+/sys/class/sec/tsp/enabled              0660   system     system
 
-# Big Hammer
-/dev/wbrc        0660 bluetooth bluetooth
+# CPU Governor
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/timer_rate          0660   system  system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/hispeed_freq        0660   system  system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/target_loads        0660   system  system
+/sys/devices/system/cpu/cpu*   cpufreq/interactive/boost               0660   system  system
+
+# Block Devices
+/dev/block/by-name/persistent    0660    system    system
+/dev/block/by-name/steady       0660    system    system
+
+# Grip Sensor
+/sys/devices/virtual/input/input*   enable      0660   system   input
+/sys/devices/virtual/input/input*   enable2     0660   system   radio
+/sys/devices/virtual/input/input*   poll_delay  0660   system   input
 
 # parallel_restorecon_dir
-# Never include the "/sys/devices/platform/soc/1d84000.ufshc" path
 parallel_restorecon_dir /sys
 parallel_restorecon_dir /sys/devices
 parallel_restorecon_dir /sys/firmware
