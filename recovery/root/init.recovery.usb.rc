@@ -1,5 +1,5 @@
 # TWRP USB Configuration - Samsung Galaxy A13
-# Updated: 2025-02-25 12:15:51
+# Updated: 2025-02-27 15:16:46
 # Author: Matheus-TestUser1
 
 on init
@@ -9,7 +9,7 @@ on init
     mkdir /config/usb_gadget/g1/configs/b.1 0777 shell shell
     mkdir /config/usb_gadget/g1/configs/b.1/strings/0x409 0770
 
-    write /config/usb_gadget/g1/idVendor 0x04E8
+    write /config/usb_gadget/g1/idVendor 0x04E8     # Samsung vendor ID
     write /config/usb_gadget/g1/strings/0x409/serialnumber ${ro.serialno}
     write /config/usb_gadget/g1/strings/0x409/manufacturer "SAMSUNG"
     write /config/usb_gadget/g1/strings/0x409/product ${ro.product.model}
@@ -91,8 +91,11 @@ on property:sys.usb.ffs.ready=1 && property:sys.usb.config=fastboot
     write /config/usb_gadget/g1/UDC ${sys.usb.controller}
     setprop sys.usb.state ${sys.usb.config}
 
-# Sideload
+# Sideload (Corrigido)
 on property:sys.usb.config=sideload
+    start adbd
+
+on property:sys.usb.ffs.ready=1 && property:sys.usb.config=sideload
     write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "sideload"
     rm /config/usb_gadget/g1/configs/b.1/f1
     write /config/usb_gadget/g1/idProduct 0xD001
