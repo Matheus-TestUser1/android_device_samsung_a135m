@@ -39,4 +39,4 @@ PRODUCT_COPY_FILES += \
 
 # Bibliotecas HW
 PRODUCT_COPY_FILES += \
-    $(wildcard $(LOCAL_PATH)/recovery/root/vendor/lib/hw/android.hardware.graphics.mapper@4.0-impl.so):$(TARGET_COPY_OUT_RECOVERY)/root/vendor/lib/hw/
+    $(wildcard $(LOCAL_PATH)/recovery/root/vendor/lib/hw/*.so):$(TARGET_COPY_OUT_RECOVERY)/root/vendor/lib/hw/
