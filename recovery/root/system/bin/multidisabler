@@ -1,14 +1,21 @@
 #!/system/bin/sh
 #
-# A simple Samsung services disabler by Ian Macdonald.
-#
-# Use this to prime your device after installing TWRP.
+# Samsung services disabler for Galaxy A13 Exynos (a13)
+# Based on the original script by Ian Macdonald
+# Enhanced for Galaxy A13 Exynos (SM-A135F)
 
 set -e
 
+# Definições específicas para Galaxy A13
+DEVICE="a13"
+SOC="exynos850"
+RECOVERY_PATH="/vendor/recovery-from-boot.p"
+FSTAB_VENDOR="/vendor/etc/fstab.${SOC}"
+FSTAB_SYSTEM="/system/fstab.${SOC}"
+
 # Função para calcular o MD5
 md5() {
-  md5sum -b "$1"
+  md5sum -b "$1" | awk '{print $1}'
 }
 
 # Função para verificar se o arquivo foi alterado
@@ -18,9 +25,9 @@ file_changed() {
   local new_md5=$(md5 "$file")
 
   if [ "$new_md5" != "$old_md5" ]; then
-    echo " -     ...modified."
+    echo " -     ...modificado com sucesso."
   else
-    echo " -     ...unchanged."
+    echo " -     ...sem alterações."
   fi
 }
 
@@ -28,117 +35,182 @@ file_changed() {
 resize_vendor() {
   local dm_block=$(df -k | grep "/vendor" | awk '{print $1}')
 
-  echo " - Unmounting /vendor..."
+  echo " - Desmontando /vendor..."
   umount /vendor
-  echo " - Checking vendor block partition before resizing..."
+  echo " - Verificando partição vendor antes do redimensionamento..."
   e2fsck -f $dm_block
-  echo " - Resizing the filesystem on $dm_block..."
+  echo " - Redimensionando o sistema de arquivos em $dm_block..."
   resize2fs $dm_block
-  echo " - Make the partition R/W by unsharing its blocks..."
+  echo " - Tornando a partição R/W descompartilhando seus blocos..."
   e2fsck -E unshare_blocks $dm_block
-  echo " - Remounting /vendor..."
+  echo " - Remontando /vendor..."
   mount /vendor
   mount -o remount,rw /vendor
 }
 
 # Função para verificar o espaço livre na partição /vendor
 vendor_free_size_check() {
-  echo " - Checking vendor free size..."
+  echo " - Verificando espaço livre em vendor..."
   if dd if=/dev/zero of=/vendor/test bs=1 count=1 2>/dev/null; then
-    echo " -     ...succeeded."
+    echo " -     ...sucesso."
     rm -f /vendor/test
   else
-    echo " -     ...No free space left on vendor, attempting to resize vendor..."
+    echo " -     ...Sem espaço livre em vendor, tentando redimensionar..."
     echo " "
-    rm -f /vendor/test
+    rm -f /vendor/test 2>/dev/null || true
     resize_vendor
   fi
 }
 
-# Função para desativar a criptografia baseada em arquivos (FBE)
+# Função para desativar a criptografia baseada em arquivos (FBE) - específica para A13
 disable_fbe() {
   local md5
   local i
-  fstab_files=$(grep -lr 'fileencryption' vendor/etc)
+  local fstab_files="$FSTAB_VENDOR $FSTAB_SYSTEM"
 
   for i in $fstab_files; do
-    if [ -f $i ]; then
-      echo " - Disabling file-based encryption (FBE) for /data..."
-      echo " -   Found $i."
+    if [ -f $i ]; então
+      echo " - Desativando criptografia baseada em arquivos (FBE) para /data..."
+      echo " -   Encontrado $i."
       md5=$(md5 $i)
-      sed -i -e 's/^\([^#].*\)fileencryption=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
+      # Padrão específico para Galaxy A13
+      sed -i -e 's/^\([^#].\)fileencryption=[^,]\(.*\)$/# &\n\1encryptable\2/g' \
+             -e 's/^\([^#].\)metadata_encryption=[^,]\(.*\)$/# &\n\1encryptable\2/g' $i
       file_changed $i $md5
     fi
   done
 }
 
-# Função para desativar a criptografia de disco completo (FDE)
+# Função para desativar a criptografia de disco completo (FDE) - específica para A13
 disable_fde() {
   local md5
   local i
-  fstab_files=$(grep -lr 'forceencrypt' vendor/etc)
+  local fstab_files="$FSTAB_VENDOR $FSTAB_SYSTEM"
 
-  for i in $fstab_files; do
-    if [ -f $i ]; then
-      echo " - Disabling full-disk encryption (FDE) for /data..."
-      echo " -   Found $i."
+  for i in $fstab_files; então
+    if [ -f $i ]; então
+      echo " - Desativando criptografia de disco completo (FDE) para /data..."
+      echo " -   Encontrado $i."
       md5=$(md5 $i)
-      sed -i -e 's/^\([^#].*\)forceencrypt=[^,]*\(.*\)$/# &\n\1encryptable\2/g' $i
+      # Padrão específico para Galaxy A13
+      sed -i -e 's/^\([^#].\)forceencrypt=[^,]\(.*\)$/# &\n\1encryptable\2/g' $i
       file_changed $i $md5
     fi
   done
 }
 
-# Função para desativar a restauração de recuperação
+# Função específica para backup dos arquivos fstab originais
+backup_fstab() {
+  for i in $FSTAB_VENDOR $FSTAB_SYSTEM; então
+    if [ -f $i ] && [ ! -f $i.bak ]; então
+      echo " - Fazendo backup de $i para $i.bak"
+      cp $i $i.bak
+    fi
+  done
+}
+
+# Função para desativar a restauração de recovery (específica para A13)
 disable_recovery_restoration() {
-  local r=recovery-from-boot.p
+  local r="recovery-from-boot.p"
   local found
-  local i
 
-  echo " - Disabling restoration of stock recovery..."
+  echo " - Desativando restauração da recovery stock..."
 
-  for i in $ANDROID_ROOT $ANDROID_ROOT/system /vendor; do
-    if [ -f $i/$r~ ]; then
-      echo " -   ...already disabled."
+  # Verifica especificamente o local para Galaxy A13
+  if [ -f $RECOVERY_PATH ]; então
+    echo " -   Encontrado $RECOVERY_PATH. Desativando..."
+    mv $RECOVERY_PATH ${RECOVERY_PATH}~
+
+    if [ -f ${RECOVERY_PATH}~ ]; então
+      echo " -     ...sucesso."
+    else
+      echo " -     ...falha."
+    fi
+    found=true
+  fi
+
+  # Verifica em locais alternativos também
+  for i in $ANDROID_ROOT $ANDROID_ROOT/system /vendor; então
+    if [ -f $i/$r~ ]; então
+      echo " -   ...já desativado."
       found=true
       break
     fi
 
-    if [ -f $i/$r ]; then
-      echo " -   Found $i/$r. Disabling..."
+    if [ -f $i/$r ]; então
+      echo " -   Encontrado $i/$r. Desativando..."
       mv $i/$r $i/$r~
 
-      if [ -f $i/$r~ ]; then
-        echo " -     ...succeeded."
+      if [ -f $i/$r~ ]; então
+        echo " -     ...sucesso."
       else
-        echo " -     ...failed."
+        echo " -     ...falha."
       fi
 
       found=true
       break
     fi
-
   done
 
-  [ -z "$found" ] && echo " -   Found no stock recovery. Pfft."
+  [ -z "$found" ] && echo " -   Não foi encontrada recovery stock. Bem!"
 }
 
-# Desabilitar a restauração de recuperação e atualizar o boot.img
-echo "Disabling recovery restoration..."
-dd if=/dev/block/by-name/boot of=/tmp/old-boot.img
-mkdir -p /tmp/unpacked_boot
-cd /tmp/unpacked_boot
-magiskboot unpack -h /tmp/old-boot.img
-magiskboot repack /tmp/old-boot.img /tmp/new-boot.img
-cd -
-rm -rf /tmp/unpacked_boot
-dd if=/tmp/new-boot.img of=/dev/block/by-name/boot
+# Função para atualizar boot.img - específica para A13
+update_boot() {
+  echo " - Atualizando boot.img para evitar restauração da recovery..."
+  
+  if [ -e "/dev/block/by-name/boot" ]; então
+    echo " -   Encontrada partição boot em /dev/block/by-name/boot"
+    
+    # Backup do boot original
+    dd if=/dev/block/by-name/boot of=/tmp/old-boot.img
+    
+    # Utilizando magiskboot para descompactar e reempacotar
+    if [ -e "/data/adb/magisk/magiskboot" ]; então
+      MAGISKBOOT="/data/adb/magisk/magiskboot"
+    elif [ -e "/data/adb/magisk/boot" ]; então
+      MAGISKBOOT="/data/adb/magisk/boot"
+    else
+      echo " -   Magiskboot não encontrado. Tentando usar binário incluso..."
+      MAGISKBOOT="magiskboot"
+    fi
+    
+    mkdir -p /tmp/unpacked_boot
+    cd /tmp/unpacked_boot
+    
+    if $MAGISKBOOT --help >/dev/null 2>&1; então
+      echo " -   Descompactando boot.img..."
+      $MAGISKBOOT unpack -h /tmp/old-boot.img
+      
+      # Modificar sinalizador de recovery_dtbo se existir
+      if [ -f "recovery_dtbo" ]; então
+        echo " -   Modificando recovery_dtbo..."
+        mv recovery_dtbo recovery_dtbo.bak
+      fi
+      
+      echo " -   Reempacotando boot.img..."
+      $MAGISKBOOT repack /tmp/old-boot.img /tmp/new-boot.img
+      
+      echo " -   Gravando novo boot.img..."
+      dd if=/tmp/new-boot.img of=/dev/block/by-name/boot
+      
+      echo " -   Boot.img atualizado com sucesso."
+    else
+      echo " -   Magiskboot não funcional. Pulando atualização do boot.img."
+    fi
+    
+    cd - >/dev/null
+    rm -rf /tmp/unpacked_boot
+    rm -f /tmp/old-boot.img /tmp/new-boot.img
+  else
+    echo " -   Partição boot não encontrada. Pulando atualização do boot.img."
+  fi
+}
 
 # Início do script principal
 echo " "
-echo "Multi-disabler v3.1 for Samsung devices"
-echo "running Android 9 or later."
-echo "by Ian Macdonald, enhanced by afaneh92"
+echo "Multi-disabler v3.5 para Samsung Galaxy A13 (Exynos)"
+echo "baseado no script original por Ian Macdonald"
 echo " "
 
 os=$(getprop ro.build.version.release)
@@ -150,59 +222,63 @@ fw=${bl:$((${#bl} - 4)):4}
 device=${bl:0:$((${#bl} - 8))}
 mft=$(getprop ro.product.manufacturer | tr '[A-Z]' '[a-z]')
 
-if [ "$mft" != samsung ]; then
-  echo " - Device appears not to be made by Samsung."
+if [ "$mft" != samsung ]; então
+  echo " - Dispositivo não parece ser Samsung."
   fatal=true
-elif [ -z "$device" ]; then
-  echo " - Could not determine device model."
+elif [ -z "$device" ]; então
+  echo " - Não foi possível determinar o modelo do dispositivo."
   fatal=true
-elif [ $major -lt 9 ]; then
-  echo " - This software is incompatible with Android $major."
+elif [ $major -lt 9 ]; então
+  echo " - Este software é incompatível com Android $major."
   fatal=true
 fi
-if [ -n "$fatal" ]; then
-  echo " - Installation aborted."
+
+if [ -n "$fatal" ]; então
+  echo " - Instalação abortada."
   echo " "
   exit 1
 fi
 
-echo " - Detected a $device device with a $fw bootloader."
-echo " - The environment appears to be Android $major."
+echo " - Detectado dispositivo $device com bootloader $fw."
+echo " - O ambiente parece ser Android $major."
 echo " "
 
-echo " - Mounting $ANDROID_ROOT..."
+echo " - Montando $ANDROID_ROOT..."
 mount $ANDROID_ROOT 2>/dev/null
 mount -o remount,rw $ANDROID_ROOT 2>/dev/null
 
-if ! mount | grep $ANDROID_ROOT >/dev/null; then
+if ! mount | grep $ANDROID_ROOT >/dev/null; então
   ANDROID_ROOT=/system_root
-  echo " -   Attempt failed. Mounting at $ANDROID_ROOT..."
+  echo " -   Tentativa falhou. Montando em $ANDROID_ROOT..."
   mount -o rw $ANDROID_ROOT
-  if ! mount | grep $ANDROID_ROOT >/dev/null; then
-    echo " -   Even that attempt failed. Aborting..."
+  if ! mount | grep $ANDROID_ROOT >/dev/null; então
+    echo " -   Mesmo essa tentativa falhou. Abortando..."
     exit 2
   fi
 fi
 
-echo " - Mounting /vendor..."
+echo " - Montando /vendor..."
 mount /vendor
 mount -o remount,rw /vendor
 
-if ! mount | grep /vendor >/dev/null; then
-  echo " -   Mount failed. Aborting..."
+if ! mount | grep /vendor >/dev/null; então
+  echo " -   Montagem falhou. Abortando..."
   exit 3
 fi
 
+# Executando as funções principais
 vendor_free_size_check
+backup_fstab
 disable_fbe
 disable_fde
 disable_recovery_restoration
+update_boot
 
-echo " - Unmounting /vendor..."
+echo " - Desmontando /vendor..."
 umount /vendor
-echo " - Unmounting $ANDROID_ROOT..."
+echo " - Desmontando $ANDROID_ROOT..."
 umount $ANDROID_ROOT
 
 echo " "
-echo " - Finished."
+echo " - Finalizado. Encryption desativada e recovery protegida."
 echo " "
