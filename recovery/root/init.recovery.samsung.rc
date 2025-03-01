@@ -3,3 +3,75 @@ on init
     rm /efs
     mkdir /efs
     mkdir /sec_efs
+
+on early-boot
+    # Touch input permissions
+    mkdir /efs/taas 0775 system system
+    mkdir /mnt/vendor/efs/taas 0775 system system
+    
+    # Touch device permissions
+    chown system system /dev/tspio
+    chown system system /dev/tsp_data
+    chown system system /sys/class/sec/tsp/input/enabled
+    chown system system /sys/class/sec/tsp1/input/enabled
+    chown system system /sys/class/sec/tsp2/input/enabled
+    chown system system /sys/class/sec/sec_epen/input/enabled
+    chown system system /sys/class/sec/tsp/enabled
+    chown system system /sys/class/sec/tsp1/enabled
+    chown system system /sys/class/sec/tsp2/enabled
+    chown system system /sys/class/sec/sec_epen/enabled
+    chown system system /sys/class/sec/digital_hall/digital_hall_thd
+
+on boot
+    # Touchscreen permissions
+    chown system radio /sys/class/sec/tsp/cmd
+    chown system system /sys/class/sec/tsp/input/enabled
+    chmod 0660 /sys/class/sec/tsp/input/enabled
+    chown system system /sys/class/sec/tsp/enabled
+    chmod 0660 /sys/class/sec/tsp/enabled
+    chown root system /proc/tsp_msg
+    chmod 0440 /proc/tsp_msg
+
+    # Touch features
+    chown system system /sys/class/sec/tsp/multi_count
+    chown system system /sys/class/sec/tsp/wet_mode
+    chown system system /sys/class/sec/tsp/noise_mode
+    chown system system /sys/class/sec/tsp/comm_err_count
+    chown system system /sys/class/sec/tsp/checksum
+    chown system system /sys/class/sec/tsp/all_touch_count
+    chown system system /sys/class/sec/tsp/sensitivity_mode
+    
+    # Habilitar touch
+    write /sys/class/sec/tsp/input/enabled 1
+    write /sys/class/sec/tsp/enabled 1
+    write /sys/class/sec/tsp1/input/enabled 1
+    write /sys/class/sec/tsp1/enabled 1
+    write /sys/class/sec/tsp2/input/enabled 1
+    write /sys/class/sec/tsp2/enabled 1
+
+on property:sys.boot_completed=1
+    # Re-aplicar permissões importantes do touch
+    chown system system /dev/tspio
+    chown system system /sys/class/sec/tsp/input/enabled
+    chown system system /sys/class/sec/tsp1/input/enabled
+    chown system system /sys/class/sec/tsp2/input/enabled
+    chown system system /sys/class/sec/sec_epen/input/enabled
+    chown system system /sys/class/sec/tsp/enabled
+    chown system system /sys/class/sec/tsp1/enabled
+    chown system system /sys/class/sec/tsp2/enabled
+    
+    # Habilitar touch novamente após boot
+    write /sys/class/sec/tsp/input/enabled 1
+    write /sys/class/sec/tsp/enabled 1
+    write /sys/class/sec/tsp1/input/enabled 1
+    write /sys/class/sec/tsp1/enabled 1
+    write /sys/class/sec/tsp2/input/enabled 1
+    write /sys/class/sec/tsp2/enabled 1
+
+# O serviço sysinput será carregado automaticamente pelo sistema
+service sec-sysinput-aidl /vendor/bin/hw/vendor.samsung.hardware.sysinput-service
+    class hal
+    priority -8
+    user system
+    group system
+    seclabel u:r:recovery:s0
