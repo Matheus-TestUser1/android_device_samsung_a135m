@@ -64,12 +64,6 @@ subsystem sound
 /sys/class/sec/tsp/input/enabled        0660   system     system
 /sys/class/sec/tsp/enabled              0660   system     system
 
-# CPU Governor
-/sys/devices/system/cpu/cpu*   cpufreq/interactive/timer_rate          0660   system  system
-/sys/devices/system/cpu/cpu*   cpufreq/interactive/hispeed_freq        0660   system  system
-/sys/devices/system/cpu/cpu*   cpufreq/interactive/target_loads        0660   system  system
-/sys/devices/system/cpu/cpu*   cpufreq/interactive/boost               0660   system  system
-
 # Block Devices
 /dev/block/by-name/persistent    0660    system    system
 /dev/block/by-name/steady       0660    system    system
