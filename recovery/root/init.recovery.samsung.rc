@@ -1,3 +1,7 @@
+# TWRP init.recovery.samsung.rc for Samsung Galaxy A13
+# Updated: 2025-03-08 19:50:23
+# Author: Matheus-TestUser1
+
 on init
     # Remover e recriar diretórios necessários
     rm /efs
