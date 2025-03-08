@@ -73,5 +73,7 @@ service sec-sysinput-aidl /vendor/bin/hw/vendor.samsung.hardware.sysinput-servic
     class hal
     priority -8
     user system
-    group system
+    group system input
     seclabel u:r:recovery:s0
+    seclabel u:r:recovery:s0
+    start-on boot
