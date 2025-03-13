@@ -1,54 +1,62 @@
 # TWRP init.recovery.samsung.rc for Samsung Galaxy A13
-# Updated: 2025-03-08 19:50:23
+# Updated: 2025-03-13 13:08:12
 # Author: Matheus-TestUser1
 
 on init
-    # Remover e recriar diretórios necessários
     rm /efs
     mkdir /efs
     mkdir /sec_efs
 
 on fs
-    # Garantir que o diretório efs esteja montado (se necessário)
     mkdir /mnt/vendor/efs 0771 radio system
+    wait /dev/block/by-name/efs
     mount ext4 /dev/block/by-name/efs /efs
     mount ext4 /dev/block/by-name/efs /mnt/vendor/efs
 
-on post-fs
-    # Permissões importantes para nós de dispositivo do touchscreen
-    chmod 0660 /dev/tspio
-    chmod 0660 /dev/tsp_data
-    chmod 0660 /sys/class/sec/tsp/cmd
-    chmod 0666 /dev/input/event3  # sec_touchscreen
+    # TAAS directories
+    mkdir /efs/taas 0775 system system
+    mkdir /mnt/vendor/efs/taas 0775 system system
 
-    # Definir permissões antes do serviço iniciar
-    chown system system /dev/tspio
-    chown system system /dev/tsp_data
-    chown system system /sys/class/sec/tsp/input/enabled
-    chown system system /sys/class/sec/tsp/enabled
-    chown system system /dev/input/event3
+on post-fs
+    wait /dev/input/event3
+    chmod 0666 /dev/input/event3
+
+    # Touch nodes permissions
+    chmod 0660 /sys/class/sec/tsp/cmd
+    chmod 0660 /sys/class/sec/tsp/input/enabled
+    chmod 0660 /sys/class/sec/tsp/enabled
+
+    # Touch features permissions
+    chown system system /sys/class/sec/tsp/multi_count
+    chown system system /sys/class/sec/tsp/wet_mode
+    chown system system /sys/class/sec/tsp/noise_mode
+    chown system system /sys/class/sec/tsp/comm_err_count
+    chown system system /sys/class/sec/tsp/checksum
+    chown system system /sys/class/sec/tsp/all_touch_count
+    chown system system /sys/class/sec/tsp/sensitivity_mode
 
 on early-boot
-    # Reset inicial do touchscreen
     write /sys/class/sec/tsp/reset 1
-    sleep 2
+    sleep 3
     
-    # Habilitar touchscreen
+    # Enable all touch inputs
     write /sys/class/sec/tsp/enabled 1
     write /sys/class/sec/tsp/input/enabled 1
+    write /sys/class/sec/tsp1/enabled 1
+    write /sys/class/sec/tsp1/input/enabled 1
+    write /sys/class/sec/tsp2/enabled 1
+    write /sys/class/sec/tsp2/input/enabled 1
     
-    # Iniciar serviços necessários antes do sysinput
     start hwservicemanager
     start vendor.keymaster-4-0
     start servicemanager
-    sleep 1
+    sleep 2
     
-    # Forçar inicialização do touch
     write /sys/class/sec/tsp/cmd "force_touch_active"
     write /sys/class/sec/tsp/cmd "set_lowpower_mode:0"
-    sleep 1
 
-# Define serviços necessários
+
+# Serviços
 service hwservicemanager /system/bin/hwservicemanager
     user root
     group root readproc
@@ -68,6 +76,7 @@ service vendor.keymaster-4-0 /vendor/bin/hw/android.hardware.keymaster@4.0-servi
     user root
     group root
     seclabel u:r:recovery:s0
+    socket keymaster-4-0 stream 0666 root root
     disabled
     oneshot
 
@@ -81,20 +90,23 @@ service sec-sysinput-aidl /vendor/bin/hw/vendor.samsung.hardware.sysinput-servic
     oneshot
 
 on property:sys.boot_completed=1
-    # Re-aplicar permissões importantes do touch
+    # Reapply all touch permissions
     chown system system /dev/tspio
+    chown system system /dev/tsp_data
     chown system system /sys/class/sec/tsp/input/enabled
+    chown system system /sys/class/sec/tsp1/input/enabled
+    chown system system /sys/class/sec/tsp2/input/enabled
+    chown system system /sys/class/sec/sec_epen/input/enabled
     chown system system /sys/class/sec/tsp/enabled
-    
-    # Re-ativar touch
+    chown system system /sys/class/sec/tsp1/enabled
+    chown system system /sys/class/sec/tsp2/enabled
+
+    # Re-enable all touch inputs
     write /sys/class/sec/tsp/reset 1
-    sleep 1
+    sleep 2
     write /sys/class/sec/tsp/enabled 1
     write /sys/class/sec/tsp/input/enabled 1
-
-on boot
-    # Garantir permissões novamente
-    chmod 0666 /dev/input/event3
-    
-    # Forçar um evento para "acordar" o touchscreen
-    input tap 100 100
+    write /sys/class/sec/tsp1/enabled 1
+    write /sys/class/sec/tsp1/input/enabled 1
+    write /sys/class/sec/tsp2/enabled 1
+    write /sys/class/sec/tsp2/input/enabled 1
