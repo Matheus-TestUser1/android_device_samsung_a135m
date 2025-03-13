@@ -1,5 +1,5 @@
 # TWRP init.recovery.samsung.rc for Samsung Galaxy A13
-# Updated: 2025-03-13 13:08:12
+# Updated: 2025-03-13 14:11:07
 # Author: Matheus-TestUser1
 
 on init
@@ -37,7 +37,7 @@ on post-fs
 
 on early-boot
     write /sys/class/sec/tsp/reset 1
-    sleep 3
+    exec_background - system system -- /system/bin/sleep 3
     
     # Enable all touch inputs
     write /sys/class/sec/tsp/enabled 1
@@ -50,7 +50,7 @@ on early-boot
     start hwservicemanager
     start vendor.keymaster-4-0
     start servicemanager
-    sleep 2
+    exec_background - system system -- /system/bin/sleep 2
     
     write /sys/class/sec/tsp/cmd "force_touch_active"
     write /sys/class/sec/tsp/cmd "set_lowpower_mode:0"
@@ -103,7 +103,7 @@ on property:sys.boot_completed=1
 
     # Re-enable all touch inputs
     write /sys/class/sec/tsp/reset 1
-    sleep 2
+    exec_background - system system -- /system/bin/sleep 2
     write /sys/class/sec/tsp/enabled 1
     write /sys/class/sec/tsp/input/enabled 1
     write /sys/class/sec/tsp1/enabled 1
