@@ -3,11 +3,9 @@ on init
     write /sys/class/android_usb/android0/enable 0
     setprop sys.usb.android_old 0
     
-    # Tenta acessar o sistema legado para verificar se está disponível
-    if [ -e /sys/class/android_usb/android0/functions ]
-    then
-        setprop sys.usb.android_old 1
-    fi
+    # Detect if legacy system is available and set property
+    exec u:r:recovery:s0 -- /system/bin/sh -c "[ -e /sys/class/android_usb/android0/functions ] && echo 1 > /dev/usb_legacy_detected"
+    exec u:r:recovery:s0 -- /system/bin/sh -c "[ -e /dev/usb_legacy_detected ] && setprop sys.usb.android_old 1"
 
     # Sempre configura ConfigFS (para dispositivos modernos)
     mount configfs none /config
@@ -29,15 +27,12 @@ on init
     mkdir /config/usb_gadget/g1/functions/ffs.sideload
     mkdir /config/usb_gadget/g1/functions/ss_mon.mtp
 
-    # Se sistema legado estiver disponível, também configura ele
-    if [ "$(getprop sys.usb.android_old)" = "1" ]
-    then
-        write /sys/class/android_usb/android0/idVendor 0x04E8
-        write /sys/class/android_usb/android0/f_ffs/aliases adb
-        write /sys/class/android_usb/android0/iManufacturer "SAMSUNG"
-        write /sys/class/android_usb/android0/iProduct ${ro.product.model}
-        write /sys/class/android_usb/android0/iSerial ${ro.serialno}
-    fi
+on property:sys.usb.android_old=1
+    write /sys/class/android_usb/android0/idVendor 0x04E8
+    write /sys/class/android_usb/android0/f_ffs/aliases adb
+    write /sys/class/android_usb/android0/iManufacturer "SAMSUNG"
+    write /sys/class/android_usb/android0/iProduct ${ro.product.model}
+    write /sys/class/android_usb/android0/iSerial ${ro.serialno}
 
 on fs
     mount pstore pstore /sys/fs/pstore
@@ -68,67 +63,58 @@ on property:sys.usb.config=none
     write /config/usb_gadget/g1/bDeviceSubClass 0
     write /config/usb_gadget/g1/bDeviceProtocol 0
     
-    # Desliga sistema legado se estiver disponível
-    if [ "$(getprop sys.usb.android_old)" = "1" ]
-    then
-        write /sys/class/android_usb/android0/enable 0
-    fi
+on property:sys.usb.config=none && property:sys.usb.android_old=1
+    write /sys/class/android_usb/android0/enable 0
     
+on property:sys.usb.config=none
     setprop sys.usb.state ${sys.usb.config}
 
 # ADB modo
 on property:sys.usb.config=adb
     start adbd
 
-on property:sys.usb.ffs.ready=1 && property:sys.usb.config=adb
-    # Determina qual sistema usar com base na disponibilidade
-    # Se android_old=1, usamos o sistema legado, caso contrário, o ConfigFS
-    
-    if [ "$(getprop sys.usb.android_old)" = "1" ]
-    then
-        # Configuração para sistema legado
-        write /sys/class/android_usb/android0/enable 0
-        write /sys/class/android_usb/android0/idVendor 0x04E8
-        write /sys/class/android_usb/android0/idProduct 0x6860
-        write /sys/class/android_usb/android0/functions adb
-        write /sys/class/android_usb/android0/enable 1
-    else
-        # Configuração para ConfigFS
-        write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "adb"
-        rm /config/usb_gadget/g1/configs/b.1/f1
-        write /config/usb_gadget/g1/idProduct 0x6860
-        symlink /config/usb_gadget/g1/functions/ffs.adb /config/usb_gadget/g1/configs/b.1/f1
-        write /config/usb_gadget/g1/UDC ${sys.usb.controller}
-    fi
-    
+# ADB modo com sistema legado
+on property:sys.usb.ffs.ready=1 && property:sys.usb.config=adb && property:sys.usb.android_old=1
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 0x04E8
+    write /sys/class/android_usb/android0/idProduct 0x6860
+    write /sys/class/android_usb/android0/functions adb
+    write /sys/class/android_usb/android0/enable 1
+    setprop sys.usb.state ${sys.usb.config}
+
+# ADB modo com ConfigFS
+on property:sys.usb.ffs.ready=1 && property:sys.usb.config=adb && property:sys.usb.android_old=0
+    write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "adb"
+    rm /config/usb_gadget/g1/configs/b.1/f1
+    write /config/usb_gadget/g1/idProduct 0x6860
+    symlink /config/usb_gadget/g1/functions/ffs.adb /config/usb_gadget/g1/configs/b.1/f1
+    write /config/usb_gadget/g1/UDC ${sys.usb.controller}
     setprop sys.usb.state ${sys.usb.config}
 
 # MTP+ADB modo
 on property:sys.usb.config=mtp,adb
     start adbd
 
-on property:sys.usb.ffs.ready=1 && property:sys.usb.config=mtp,adb
-    if [ "$(getprop sys.usb.android_old)" = "1" ]
-    then
-        # Configuração para sistema legado
-        write /sys/class/android_usb/android0/enable 0
-        write /sys/class/android_usb/android0/idVendor 0x04E8
-        write /sys/class/android_usb/android0/idProduct 0x6860
-        write /sys/class/android_usb/android0/functions mtp,adb
-        write /sys/class/android_usb/android0/enable 1
-    else
-        # Configuração para ConfigFS
-        write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "mtp_adb"
-        rm /config/usb_gadget/g1/configs/b.1/f1
-        rm /config/usb_gadget/g1/configs/b.1/f2
-        rm /config/usb_gadget/g1/configs/b.1/f3
-        write /config/usb_gadget/g1/idProduct 0x6860
-        symlink /config/usb_gadget/g1/functions/ffs.mtp /config/usb_gadget/g1/configs/b.1/f1
-        symlink /config/usb_gadget/g1/functions/ffs.adb /config/usb_gadget/g1/configs/b.1/f2
-        symlink /config/usb_gadget/g1/functions/ss_mon.mtp /config/usb_gadget/g1/configs/b.1/f3
-        write /config/usb_gadget/g1/UDC ${sys.usb.controller}
-    fi
-    
+# MTP+ADB modo com sistema legado
+on property:sys.usb.ffs.ready=1 && property:sys.usb.config=mtp,adb && property:sys.usb.android_old=1
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 0x04E8
+    write /sys/class/android_usb/android0/idProduct 0x6860
+    write /sys/class/android_usb/android0/functions mtp,adb
+    write /sys/class/android_usb/android0/enable 1
+    setprop sys.usb.state ${sys.usb.config}
+
+# MTP+ADB modo com ConfigFS
+on property:sys.usb.ffs.ready=1 && property:sys.usb.config=mtp,adb && property:sys.usb.android_old=0
+    write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "mtp_adb"
+    rm /config/usb_gadget/g1/configs/b.1/f1
+    rm /config/usb_gadget/g1/configs/b.1/f2
+    rm /config/usb_gadget/g1/configs/b.1/f3
+    write /config/usb_gadget/g1/idProduct 0x6860
+    symlink /config/usb_gadget/g1/functions/ffs.mtp /config/usb_gadget/g1/configs/b.1/f1
+    symlink /config/usb_gadget/g1/functions/ffs.adb /config/usb_gadget/g1/configs/b.1/f2
+    symlink /config/usb_gadget/g1/functions/ss_mon.mtp /config/usb_gadget/g1/configs/b.1/f3
+    write /config/usb_gadget/g1/UDC ${sys.usb.controller}
     setprop sys.usb.state ${sys.usb.config}
 
 # Fastboot
@@ -136,46 +122,42 @@ on property:sys.usb.config=fastboot
     stop adbd
     start fastbootd
 
-on property:sys.usb.ffs.ready=1 && property:sys.usb.config=fastboot
-    if [ "$(getprop sys.usb.android_old)" = "1" ]
-    then
-        # Configuração para sistema legado
-        write /sys/class/android_usb/android0/enable 0
-        write /sys/class/android_usb/android0/idVendor 0x04E8
-        write /sys/class/android_usb/android0/idProduct 0x4EE0
-        write /sys/class/android_usb/android0/functions fastboot
-        write /sys/class/android_usb/android0/enable 1
-    else
-        # Configuração para ConfigFS
-        write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "fastboot"
-        rm /config/usb_gadget/g1/configs/b.1/f1
-        write /config/usb_gadget/g1/idProduct 0x4EE0
-        symlink /config/usb_gadget/g1/functions/ffs.fastboot /config/usb_gadget/g1/configs/b.1/f1
-        write /config/usb_gadget/g1/UDC ${sys.usb.controller}
-    fi
-    
+# Fastboot com sistema legado
+on property:sys.usb.ffs.ready=1 && property:sys.usb.config=fastboot && property:sys.usb.android_old=1
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 0x04E8
+    write /sys/class/android_usb/android0/idProduct 0x4EE0
+    write /sys/class/android_usb/android0/functions fastboot
+    write /sys/class/android_usb/android0/enable 1
+    setprop sys.usb.state ${sys.usb.config}
+
+# Fastboot com ConfigFS
+on property:sys.usb.ffs.ready=1 && property:sys.usb.config=fastboot && property:sys.usb.android_old=0
+    write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "fastboot"
+    rm /config/usb_gadget/g1/configs/b.1/f1
+    write /config/usb_gadget/g1/idProduct 0x4EE0
+    symlink /config/usb_gadget/g1/functions/ffs.fastboot /config/usb_gadget/g1/configs/b.1/f1
+    write /config/usb_gadget/g1/UDC ${sys.usb.controller}
     setprop sys.usb.state ${sys.usb.config}
 
 # Sideload
 on property:sys.usb.config=sideload
     start adbd
 
-on property:sys.usb.ffs.ready=1 && property:sys.usb.config=sideload
-    if [ "$(getprop sys.usb.android_old)" = "1" ]
-    then
-        # Configuração para sistema legado
-        write /sys/class/android_usb/android0/enable 0
-        write /sys/class/android_usb/android0/idVendor 0x04E8
-        write /sys/class/android_usb/android0/idProduct 0xD001
-        write /sys/class/android_usb/android0/functions sideload
-        write /sys/class/android_usb/android0/enable 1
-    else
-        # Configuração para ConfigFS
-        write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "sideload"
-        rm /config/usb_gadget/g1/configs/b.1/f1
-        write /config/usb_gadget/g1/idProduct 0xD001
-        symlink /config/usb_gadget/g1/functions/ffs.sideload /config/usb_gadget/g1/configs/b.1/f1
-        write /config/usb_gadget/g1/UDC ${sys.usb.controller}
-    fi
-    
+# Sideload com sistema legado
+on property:sys.usb.ffs.ready=1 && property:sys.usb.config=sideload && property:sys.usb.android_old=1
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 0x04E8
+    write /sys/class/android_usb/android0/idProduct 0xD001
+    write /sys/class/android_usb/android0/functions sideload
+    write /sys/class/android_usb/android0/enable 1
+    setprop sys.usb.state ${sys.usb.config}
+
+# Sideload com ConfigFS
+on property:sys.usb.ffs.ready=1 && property:sys.usb.config=sideload && property:sys.usb.android_old=0
+    write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "sideload"
+    rm /config/usb_gadget/g1/configs/b.1/f1
+    write /config/usb_gadget/g1/idProduct 0xD001
+    symlink /config/usb_gadget/g1/functions/ffs.sideload /config/usb_gadget/g1/configs/b.1/f1
+    write /config/usb_gadget/g1/UDC ${sys.usb.controller}
     setprop sys.usb.state ${sys.usb.config}
