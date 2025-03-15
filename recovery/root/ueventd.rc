@@ -1,5 +1,5 @@
-# TWRP ueventd.rc for Samsung Galaxy A13
-# Updated: 2025-02-27 15:27:58
+ # TWRP ueventd.rc for Samsung Galaxy A13
+# Updated: 2025-03-15
 # Author: Matheus-TestUser1
 
 import /vendor/etc/ueventd.rc
@@ -49,8 +49,8 @@ subsystem sound
 
 # Input devices
 /dev/input/*              0660   root       input
+/dev/input/event3         0660   system     input  # Touchscreen específico
 /dev/v4l-touch*           0660   root       input
-/dev/input/event*         0660   system     input
 
 # USB
 /dev/bus/usb/*            0660   root       usb
@@ -58,20 +58,17 @@ subsystem sound
 /dev/usb_accessory        0660   root       usb
 
 # Samsung Touch
-/sys/class/sec/tsp/cmd                  0660   system     radio
-/sys/class/sec/tsp1/cmd                 0660   system     radio
-/sys/class/sec/tsp2/cmd                 0660   system     radio
+/sys/class/sec/tsp/cmd                  0660   system     system
 /sys/class/sec/tsp/input/enabled        0660   system     system
 /sys/class/sec/tsp/enabled              0660   system     system
 
 # Block Devices
 /dev/block/by-name/persistent    0660    system    system
-/dev/block/by-name/steady       0660    system    system
+/dev/block/by-name/steady        0660    system    system
 
 # Grip Sensor
-/sys/devices/virtual/input/input*   enable      0660   system   input
-/sys/devices/virtual/input/input*   enable2     0660   system   radio
-/sys/devices/virtual/input/input*   poll_delay  0660   system   input
+/sys/devices/virtual/input/input5   enable      0660   system   input
+/sys/devices/virtual/input/input5   poll_delay  0660   system   input
 
 # parallel_restorecon_dir
 parallel_restorecon_dir /sys
