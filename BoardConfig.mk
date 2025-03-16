@@ -112,6 +112,10 @@ ifeq ($(TARGET_DEVICE),a13)
         atmel_ts \
         melfas_ts \
         imagis_ts
+
+# Touch detection script path
+    TW_RECOVERY_ADDITIONAL_RELINK_FILES += \
+        $(TARGET_RECOVERY_ROOT_OUT)/detect_touch.sh
         endif
 
 # Kernel
