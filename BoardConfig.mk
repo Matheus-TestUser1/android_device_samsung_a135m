@@ -80,7 +80,7 @@ TW_USE_TOOLBOX := true
 TW_NO_LEGACY_PROPS := true
 TW_USE_NEW_MINADBD := true
 TW_NO_BIND_SYSTEM := true
-TW_INPUT_BLACKLIST := "hbtp_vm"
+TW_INPUT_BLACKLIST := "hbtp_vm grip_sensor grip_notifier sec_touchproximity"
 TW_USE_MODEL_HARDWARE_ID_FOR_DEVICE_ID := true
 TW_INCLUDE_CRYPTO := false
 TW_INCLUDE_CRYPTO_FBE := false
@@ -97,6 +97,22 @@ TW_LOAD_VENDOR_BOOT_MODULES := true
 RECOVERY_TOUCHSCREEN_SWAP_XY := true
 RECOVERY_TOUCHSCREEN_FLIP_Y := false
 RECOVERY_TOUCHSCREEN_FLIP_X := false
+
+# Touchscreen Configuration
+ifeq ($(TARGET_DEVICE),a13)
+    # Support multiple touch drivers
+    TW_TOUCHSCREEN_DRIVERS := \
+        himax_ts \
+        sec_ts \
+        novatek_ts \
+        focaltech_ts \
+        goodix_ts \
+        synaptics_ts \
+        egalax_ts \
+        atmel_ts \
+        melfas_ts \
+        imagis_ts
+        endif
 
 # Kernel
 TARGET_KERNEL_ARCH := arm64
