@@ -113,11 +113,10 @@ ifeq ($(TARGET_DEVICE),a13)
         melfas_ts \
         imagis_ts
 
-# Touch detection script path
+    # Touch detection script path
     TW_RECOVERY_ADDITIONAL_RELINK_FILES += \
         $(TARGET_RECOVERY_ROOT_OUT)/detect_touch.sh
-        endif
-
+endif
 # Kernel
 TARGET_KERNEL_ARCH := arm64
 TARGET_PREBUILT_KERNEL := $(DEVICE_PATH)/prebuilt/Image
