@@ -22,6 +22,8 @@ on post-fs
     chmod 0666 /dev/input/event3
 
     # Touch nodes permissions
+    chmod 0660 /sys/class/sec*
+    chmod 0660 /sys/class/sec/tsp*
     chmod 0660 /sys/class/sec/tsp/cmd
     chmod 0660 /sys/class/sec/tsp/input/enabled
     chmod 0660 /sys/class/sec/tsp/enabled
