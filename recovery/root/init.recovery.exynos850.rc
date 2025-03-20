@@ -11,6 +11,7 @@ on init
 
 on early-init
     write /sys/fs/selinux/enforce 0
+    setenforce 0
 
     # unlink /efs > /mnt/vendor/efs
     rm /efs
