@@ -22,13 +22,15 @@ on post-fs
     chmod 0666 /dev/input/event3
 
     # Touch nodes permissions
-    chmod 0660 /sys/class/sec*
-    chmod 0660 /sys/class/sec/tsp*
+    chmod 0666 /sys/class/sec*
+    chmod 0666 /sys/class/sec/tsp*
     chmod 0660 /sys/class/sec/tsp/cmd
     chmod 0660 /sys/class/sec/tsp/input/enabled
     chmod 0660 /sys/class/sec/tsp/enabled
 
     # Touch features permissions
+    chown system system /sys/class/sec/tsp*
+    chown system system /sys/class/sec*
     chown system system /sys/class/sec/tsp/multi_count
     chown system system /sys/class/sec/tsp/wet_mode
     chown system system /sys/class/sec/tsp/noise_mode
