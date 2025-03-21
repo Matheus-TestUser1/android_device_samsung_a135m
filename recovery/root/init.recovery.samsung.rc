@@ -21,7 +21,7 @@ on post-fs
     wait /dev/input/event3
     chmod 0666 /dev/input/event3
     chmod 0666 /dev/input*
-    
+    chmod 0666 /dev/input/event*
     # Touch nodes permissions
     chmod 0666 /sys/class/sec*
     chmod 0666 /sys/class/sec/tsp*
