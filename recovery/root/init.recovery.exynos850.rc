@@ -10,8 +10,11 @@ on init
     start watchdogd
 
 on early-init
+    # Disable SELinux effectively
     write /sys/fs/selinux/enforce 0
-    setenforce 0
+    setprop ro.boot.selinux 0
+    setprop selinux.reload_policy 0
+    write /sys/kernel/debug/selinux/force_audit 0
 
     # unlink /efs > /mnt/vendor/efs
     rm /efs
